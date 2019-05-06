@@ -3,14 +3,26 @@
 //
 var storageKey = 'content'
 var api = {
-  load: function () {
-    var json = window.localStorage.getItem(storageKey) || JSON.stringify('')
-    return JSON.parse(json)
+  load: async function () {
+    // var json = window.localStorage.getItem(storageKey) || JSON.stringify('')
+    var test = "test string"
+
+    let thePromise = new Promise((resolve, reject) => {
+      // We call resolve(...) when what we were doing asynchronously was successful, and reject(...) when it failed.
+      // In this example, we use setTimeout(...) to simulate async code. 
+      // In reality, you will probably be using something like XHR or an HTML5 API.
+      setTimeout(function(){
+        return resolve(test)
+      }, 1000);
+    });
+    return thePromise
+    
   },
   // We debounce "save()" so it will never be called more than once per second
   //  or less than once every three seconds (when there are changes to save)
-  save: _.debounce(function (content, callback) {
+  save: _.debounce(async function (content, callback) {
     window.localStorage.setItem(storageKey, JSON.stringify(content))
+    // await setTimeout(1000)
     callback()
   }, 1000, { maxWait: 3000 })
 }
@@ -20,13 +32,15 @@ var api = {
 //
 var autosaverPlugin = function (store) {
   // Load the user's saved work
-  store.commit('UPDATE_CONTENT', api.load())
+  // store.commit('UPDATE_CONTENT', api.load())
+  store.dispatch('load')
 
   // Every time the state changes, check the mutation type and save the results
   store.subscribe(function (mutation, state) {
     if (mutation.type === 'UPDATE_CONTENT') {
       store.commit('SET_SAVE_STATUS', 'Saving...')
       api.save(mutation.payload, function () {
+        console.log("about to set as saved, mutation payload: "+mutation.payload)
         store.commit('SET_SAVE_STATUS', 'Saved')
       })
       return
@@ -48,6 +62,18 @@ var store = new Vuex.Store({
     },
     'UPDATE_CONTENT': function (state, newContent) {
       state.content = newContent
+    }
+  },
+  actions: {
+    async load ({ commit }) {
+      console.log("in load action")
+      commit('UPDATE_CONTENT', 'DERP DERP TEST')
+      let data = await api.load()
+      console.log("in load action after await api.load, data is: "+JSON.stringify(data))
+      commit('UPDATE_CONTENT', JSON.stringify(data))
+    },
+    update ({ commit }, data) {
+      commit('UPDATE_CONTENT', data)
     }
   },
   plugins: [autosaverPlugin]
