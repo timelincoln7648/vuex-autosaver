@@ -3,16 +3,13 @@
 //
 var storageKey = 'content'
 var api = {
-  load: async function () {
-    // var json = window.localStorage.getItem(storageKey) || JSON.stringify('')
+  load: function () {
+    var json = window.localStorage.getItem(storageKey) || "test string"
     var test = "test string"
 
     let thePromise = new Promise((resolve, reject) => {
-      // We call resolve(...) when what we were doing asynchronously was successful, and reject(...) when it failed.
-      // In this example, we use setTimeout(...) to simulate async code. 
-      // In reality, you will probably be using something like XHR or an HTML5 API.
       setTimeout(function(){
-        return resolve(test)
+        return resolve(json)
       }, 1000);
     });
     return thePromise
@@ -21,8 +18,8 @@ var api = {
   // We debounce "save()" so it will never be called more than once per second
   //  or less than once every three seconds (when there are changes to save)
   save: _.debounce(async function (content, callback) {
-    window.localStorage.setItem(storageKey, JSON.stringify(content))
-    // await setTimeout(1000)
+    window.localStorage.setItem(storageKey, content)
+    await setTimeout(1000)
     callback()
   }, 1000, { maxWait: 3000 })
 }
@@ -32,7 +29,6 @@ var api = {
 //
 var autosaverPlugin = function (store) {
   // Load the user's saved work
-  // store.commit('UPDATE_CONTENT', api.load())
   store.dispatch('load')
 
   // Every time the state changes, check the mutation type and save the results
@@ -67,12 +63,9 @@ var store = new Vuex.Store({
   actions: {
     async load ({ commit }) {
       console.log("in load action")
-      commit('UPDATE_CONTENT', 'DERP DERP TEST')
+      commit('UPDATE_CONTENT', 'Loading...')
       let data = await api.load()
-      console.log("in load action after await api.load, data is: "+JSON.stringify(data))
-      commit('UPDATE_CONTENT', JSON.stringify(data))
-    },
-    update ({ commit }, data) {
+      console.log("in load action after await api.load, data is: "+data)
       commit('UPDATE_CONTENT', data)
     }
   },
@@ -95,15 +88,15 @@ Vue.component('saving-indicator', {
 // Text entry box
 //
 Vue.component('text-entry', {
-  template: '<textarea v-model="content" @keyup="registerChange"></textarea>',
-  data: function () {
-    return {
-      content: this.$store.state.content
-    }
-  },
-  methods: {
-    registerChange: function () {
-      this.$store.commit('UPDATE_CONTENT', this.content)
+  template: '<textarea v-model="content"></textarea>',
+  computed: {
+    content: {
+      get() {
+        return this.$store.state.content
+      },
+      set(value) {
+        this.$store.commit('UPDATE_CONTENT', value)
+      }
     }
   }
 })
